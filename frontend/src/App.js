@@ -1,23 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import Navbar from "./components/Navbar";
+import DeviceSelector from "./components/DeviceSelector";
+import DeviceStateViewer from "./components/DeviceStateViewer";
+import DeviceHistoryTable from "./components/DeviceHistoryTable";
 
 function App() {
+  const [selectedDevice, setSelectedDevice] = useState(
+    localStorage.getItem("selectedDevice") || ""
+  );
+
+  const handleLogout = () => {
+    localStorage.removeItem("selectedDevice");
+    setSelectedDevice("");
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <Navbar selectedDevice={selectedDevice} onLogout={handleLogout} />
+
+      <main style={{ padding: "20px" }}>
+        {!selectedDevice ? (
+          <DeviceSelector onDeviceSelect={setSelectedDevice} />
+        ) : (
+          <>
+            <DeviceStateViewer deviceId={selectedDevice} />
+            <DeviceHistoryTable deviceId={selectedDevice} />
+          </>
+        )}
+      </main>
     </div>
   );
 }
