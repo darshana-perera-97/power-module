@@ -39,6 +39,7 @@ class _DevicePageState extends State<DevicePage> {
   Future<void> _fetchData() async {
     // final deviceUrl = Uri.parse('http://localhost:3020/deviceState/${widget.deviceKey}');
     final deviceUrl = Uri.parse('http://localhost:3020/currentState?device=${widget.deviceKey}');
+
     final cebUrl = Uri.parse('http://localhost:3020/cebData');
 
     try {
