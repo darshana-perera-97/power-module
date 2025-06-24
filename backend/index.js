@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, "data.json");
+const CEB_FILE = path.join(__dirname, "cebData.json");
 
 // Firebase config
 const firebaseConfig = {
@@ -86,16 +87,44 @@ async function periodicLog() {
   try {
     const data = await refreshStatus();
 
-    // Clone data and add deviceStatus per device
+    // Load CEB data
+    const cebRaw = await fs.readFile(CEB_FILE, "utf8");
+    const cebData = JSON.parse(cebRaw);
+
+    // Clone data and add deviceStatus + calculatedCost
     const dataWithStatus = {};
     for (const key in data) {
       if (typeof data[key] === "object" && data[key] !== null) {
+        const deviceObj = { ...data[key] };
+        const deviceId = deviceObj.device;
+        const power = Number(deviceObj.totalpower || 0);
+
+        // Calculate cost
+        let cost = 0;
+        let found = false;
+        for (let i = 0; i < cebData.ranges.length; i++) {
+          const [min, max] = cebData.ranges[i].split("-").map(Number);
+          if (power >= min && power <= max) {
+            const fixed = cebData.monthlyCost[i];
+            const unit = cebData.unitPrice[i];
+            cost = fixed + unit * power;
+            found = true;
+            break;
+          }
+        }
+        if (!found && cebData.ranges.length > 0) {
+          const lastIndex = cebData.ranges.length - 1;
+          const fixed = cebData.monthlyCost[lastIndex];
+          const unit = cebData.unitPrice[lastIndex];
+          cost = fixed + unit * power;
+        }
+
         dataWithStatus[key] = {
-          ...data[key],
-          deviceStatus: deviceActiveStatus[data[key].device] || false,
+          ...deviceObj,
+          deviceStatus: deviceActiveStatus[deviceId] || false,
+          calculatedCost: parseFloat(cost.toFixed(2)), // rounded to 2 decimal places
         };
       } else {
-        // Keep non-object data as-is (if any)
         dataWithStatus[key] = data[key];
       }
     }
@@ -103,7 +132,6 @@ async function periodicLog() {
     const record = {
       time: getColomboTimeIso(),
       data: dataWithStatus,
-      // Remove global deviceStatus here since it's embedded now
     };
 
     console.log(
@@ -112,7 +140,7 @@ async function periodicLog() {
     );
 
     logArray.push(record);
-    if (logArray.length > 1000) logArray = logArray.slice(-1000);
+    if (logArray.length > 100000) logArray = logArray.slice(-100000);
     await fs.writeFile(DATA_FILE, JSON.stringify(logArray, null, 2), "utf8");
   } catch (err) {
     console.error("❌ periodicLog error:", err);
@@ -235,6 +263,52 @@ async function start() {
       res
         .status(500)
         .json({ error: "Failed to load device history", details: err.message });
+    }
+  });
+
+  // GET /cebData → Returns full table
+  app.get("/cebData", async (req, res) => {
+    try {
+      const raw = await fs.readFile(CEB_FILE, "utf8");
+      const cebData = JSON.parse(raw);
+      res.json(cebData);
+    } catch (err) {
+      res.status(500).json({
+        error: "Failed to load CEB data",
+        details: err.message,
+      });
+    }
+  });
+
+  // POST /cebData → Updates monthlyCost and unitPrice arrays
+  app.post("/cebData", express.json(), async (req, res) => {
+    try {
+      const { monthlyCost, unitPrice } = req.body;
+      if (
+        !Array.isArray(monthlyCost) ||
+        !Array.isArray(unitPrice) ||
+        monthlyCost.length !== 6 ||
+        unitPrice.length !== 6
+      ) {
+        return res.status(400).json({
+          error: "monthlyCost and unitPrice must be arrays of 6 numbers",
+        });
+      }
+
+      const raw = await fs.readFile(CEB_FILE, "utf8");
+      const cebData = JSON.parse(raw);
+
+      cebData.monthlyCost = monthlyCost;
+      cebData.unitPrice = unitPrice;
+
+      await fs.writeFile(CEB_FILE, JSON.stringify(cebData, null, 2), "utf8");
+
+      res.json({ message: "CEB data updated successfully", cebData });
+    } catch (err) {
+      res.status(500).json({
+        error: "Failed to update CEB data",
+        details: err.message,
+      });
     }
   });
 

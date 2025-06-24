@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import DeviceSelector from "./components/DeviceSelector";
 import DeviceStateViewer from "./components/DeviceStateViewer";
 import DeviceHistoryTable from "./components/DeviceHistoryTable";
+import CebDataManager from "./components/CebDataManager";
 
 function App() {
   const [selectedDevice, setSelectedDevice] = useState(
@@ -17,6 +18,7 @@ function App() {
   return (
     <div>
       <Navbar selectedDevice={selectedDevice} onLogout={handleLogout} />
+      <CebDataManager />
 
       <main style={{ padding: "20px" }}>
         {!selectedDevice ? (

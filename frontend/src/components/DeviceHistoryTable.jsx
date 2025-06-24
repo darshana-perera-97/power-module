@@ -41,6 +41,7 @@ export default function DeviceHistoryTable({ deviceId }) {
             <th>Live Power</th>
             <th>Total Power</th>
             <th>Voltage</th>
+            <th>cost</th>
           </tr>
         </thead>
         <tbody>
@@ -53,6 +54,7 @@ export default function DeviceHistoryTable({ deviceId }) {
               <td>{row.livepower}</td>
               <td>{row.totalpower}</td>
               <td>{row.voltage}</td>
+              <td>{row.calculatedCost}</td>
             </tr>
           ))}
         </tbody>
