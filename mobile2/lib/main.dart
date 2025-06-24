@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'splash_screen.dart';
-import 'home_page.dart';
 
 void main() {
   runApp(SmartPowerMeterApp());
@@ -14,7 +13,7 @@ class SmartPowerMeterApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Color(0xFF0077B5),
-        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(backgroundColor: Color(0xFF0077B5)),
       ),
       home: SplashScreen(),
     );
