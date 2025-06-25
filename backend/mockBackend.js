@@ -18,7 +18,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Reference to the root or a specific path
-const dataRef = ref(db, "/001");
+const dataRef = ref(db, "/002");
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -32,7 +32,7 @@ function generateRandomData() {
     livepower: getRandomInt(0, 100), // live power draw
     totalpower: getRandomInt(0, 500), // total power used
     voltage: getRandomInt(200, 250), // voltage range
-    device: "001", // voltage range
+    device: "002", // voltage range
   };
 }
 

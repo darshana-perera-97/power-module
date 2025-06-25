@@ -1,23 +1,25 @@
-export default function Navbar({ selectedDevice, onLogout }) {
-  if (!selectedDevice) return null;
+import React from "react";
 
+export default function Navbar({ selectedDevice, onLogout }) {
   return (
-    <nav style={{ background: "#eee", padding: "10px" }}>
-      <span>
-        📟 Selected Device: <strong>{selectedDevice}</strong>
-      </span>
-      <button
-        onClick={onLogout}
-        style={{
-          float: "right",
-          background: "red",
-          color: "white",
-          border: "none",
-          padding: "5px 10px",
-        }}
-      >
-        Logout
-      </button>
+    <nav className="navbar navbar-expand-lg" style={{ background: "#0077b5" }}>
+      <div className="container-fluid">
+        <span className="navbar-brand text-white fw-bold">Smart Power Meter</span>
+        {selectedDevice && (
+          <>
+            <span className="text-white ms-3">
+              📟 Selected Device: <strong>{selectedDevice}</strong>
+            </span>
+            <button
+              onClick={onLogout}
+              className="btn btn-outline-light ms-auto"
+              style={{ marginLeft: "auto" }}
+            >
+              Logout
+            </button>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

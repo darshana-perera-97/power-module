@@ -1,3 +1,10 @@
+:root {
+  --linkedin-blue: #0077b5;
+  --linkedin-dark: #005983;
+  --linkedin-light: #eaf4fb;
+  --linkedin-text: #1a1a1a;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,6 +12,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--linkedin-light);
+  color: var(--linkedin-text);
 }
 
 code {

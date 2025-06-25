@@ -26,7 +26,6 @@ class _DevicePageState extends State<DevicePage> {
   void initState() {
     super.initState();
     _fetchData();
-    // Refresh every 3 seconds like React
     timer = Timer.periodic(Duration(seconds: 3), (_) => _fetchData());
   }
 
@@ -37,9 +36,7 @@ class _DevicePageState extends State<DevicePage> {
   }
 
   Future<void> _fetchData() async {
-    // final deviceUrl = Uri.parse('http://localhost:3020/deviceState/${widget.deviceKey}');
     final deviceUrl = Uri.parse('http://localhost:3020/currentState?device=${widget.deviceKey}');
-
     final cebUrl = Uri.parse('http://localhost:3020/cebData');
 
     try {
@@ -119,22 +116,56 @@ class _DevicePageState extends State<DevicePage> {
     final data = deviceData!['data'] ?? {};
     final cost = calculateCost();
 
-    return Padding(
+    return ListView(
       padding: EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          Text("Estimated Cost: Rs. ${cost.toStringAsFixed(2)}",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          SizedBox(height: 12),
-          Text("Live Power: ${data['livepower'] ?? '-'} W",
-              style: TextStyle(fontSize: 18)),
-          Text("Total Power: ${data['totalpower'] ?? '-'} W",
-              style: TextStyle(fontSize: 18)),
-          SizedBox(height: 20),
-          Text("Current: ${data['current'] ?? '-'} A", style: TextStyle(fontSize: 18)),
-          Text("Voltage: ${data['voltage'] ?? '-'} V", style: TextStyle(fontSize: 18)),
-        ],
-      ),
+      children: [
+        Card(
+          elevation: 3,
+          child: ListTile(
+            leading: Icon(Icons.monetization_on, color: Colors.green),
+            title: Text("Estimated Cost"),
+            subtitle: Text("Rs. ${cost.toStringAsFixed(2)}"),
+          ),
+        ),
+        SizedBox(height: 10),
+        Card(
+          elevation: 2,
+          child: Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.flash_on),
+                title: Text("Live Power"),
+                trailing: Text("${data['livepower'] ?? '-'} W"),
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.power),
+                title: Text("Total Power"),
+                trailing: Text("${data['totalpower'] ?? '-'} W"),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 10),
+        Card(
+          elevation: 2,
+          child: Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.electrical_services),
+                title: Text("Current"),
+                trailing: Text("${data['current'] ?? '-'} A"),
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.bolt),
+                title: Text("Voltage"),
+                trailing: Text("${data['voltage'] ?? '-'} V"),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -144,26 +175,58 @@ class _DevicePageState extends State<DevicePage> {
     final data = deviceData!['data'] ?? {};
     final deviceStatus = deviceData!['deviceStatus'] ?? false;
 
-    return Padding(
+    return ListView(
       padding: EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          Text("Battery: ${data['battery'] ?? '-'}%", style: TextStyle(fontSize: 18)),
-          SizedBox(height: 10),
-          Text("Status: ${deviceStatus ? "🟢 Active" : "🔴 Inactive"}",
-              style: TextStyle(fontSize: 18)),
-          SizedBox(height: 10),
-          Text("Device ID: ${data['device'] ?? '-'}", style: TextStyle(fontSize: 18)),
-        ],
-      ),
+      children: [
+        Card(
+          elevation: 3,
+          child: ListTile(
+            leading: Icon(Icons.battery_full),
+            title: Text("Battery Level"),
+            trailing: Text("${data['battery'] ?? '-'}%"),
+          ),
+        ),
+        SizedBox(height: 10),
+        Card(
+          elevation: 3,
+          child: ListTile(
+            leading: Icon(
+              deviceStatus ? Icons.check_circle : Icons.cancel,
+              color: deviceStatus ? Colors.green : Colors.red,
+            ),
+            title: Text("Device Status"),
+            trailing: Text(deviceStatus ? "🟢 Active" : "🔴 Inactive"),
+          ),
+        ),
+        SizedBox(height: 10),
+        Card(
+          elevation: 3,
+          child: ListTile(
+            leading: Icon(Icons.devices_other),
+            title: Text("Device ID"),
+            trailing: Text("${data['device'] ?? '-'}"),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildAnalyticsTab() {
     return Center(
-      child: Text(
-        "Analytics data coming soon...",
-        style: TextStyle(fontSize: 20, fontStyle: FontStyle.italic, color: Colors.grey),
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              "📈 Analytics data coming soon...",
+              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -178,15 +241,26 @@ class _DevicePageState extends State<DevicePage> {
       padding: EdgeInsets.all(16),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundImage: NetworkImage(
-                'https://i.pravatar.cc/150?u=$deviceId'), // placeholder profile pic
-          ),
-          SizedBox(height: 20),
-          Text(
-            "Device ID: $deviceId",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          Card(
+            elevation: 3,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage:
+                        NetworkImage('https://i.pravatar.cc/150?u=$deviceId'),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "Device ID: $deviceId",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
