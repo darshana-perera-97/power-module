@@ -12,6 +12,7 @@
 
 # data
 /data.json
+/daily.json
 /users.json
 
 # production

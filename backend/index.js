@@ -12,6 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, "data.json");
 const CEB_FILE = path.join(__dirname, "cebData.json");
+const DAILY_FILE = path.join(__dirname, 'daily.json');
+
 
 // Firebase config
 const firebaseConfig = {
@@ -311,6 +313,7 @@ async function start() {
       });
     }
   });
+  
 
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

@@ -1,38 +1,48 @@
-.App {
-  text-align: center;
+/* CebDataManager.css */
+.ceb-table-container {
+  overflow-x: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.ceb-table {
+  margin-bottom: 0;
+  /* remove extra bottom margin */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.ceb-table th {
+  background: linear-gradient(90deg, #f1f3f5, #e9ecef);
+  color: #495057;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.ceb-table td,
+.ceb-table th {
+  padding: 0.75rem 0.5rem;
 }
 
-.App-link {
-  color: #61dafb;
+.ceb-table tbody tr:nth-of-type(odd) {
+  background-color: #f8f9fa;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ceb-table tbody tr:hover {
+  background-color: #e2e6ea;
+}
+
+.ceb-table input {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.ceb-table input.border-0 {
+  background: transparent;
+}
+
+.ceb-table input.border-0:focus {
+  background: #fff;
+  border-bottom: 1px solid #0d6efd;
+  box-shadow: none;
 }

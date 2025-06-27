@@ -5,13 +5,14 @@ import DeviceSelector from "./components/DeviceSelector";
 import DeviceStateViewer from "./components/DeviceStateViewer";
 import DeviceHistoryTable from "./components/DeviceHistoryTable";
 import CebDataManager from "./components/CebDataManager";
+import DailyUsageViewer from "./components/DailyUsageViewer";
 
 function AdminLogin({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     if (username === "admin" && password === "admin") {
       onLogin();
@@ -21,8 +22,15 @@ function AdminLogin({ onLogin }) {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
-      <form onSubmit={handleSubmit} className="p-4 border rounded bg-white" style={{ minWidth: 300 }}>
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "60vh" }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="p-4 border rounded bg-white"
+        style={{ minWidth: 300 }}
+      >
         <h3 className="mb-3 text-center">Admin Login</h3>
         <div className="mb-3">
           <input
@@ -44,7 +52,9 @@ function AdminLogin({ onLogin }) {
           />
         </div>
         {error && <div className="alert alert-danger py-1">{error}</div>}
-        <button type="submit" className="btn btn-primary w-100">Login</button>
+        <button type="submit" className="btn btn-primary w-100">
+          Login
+        </button>
       </form>
     </div>
   );
@@ -96,16 +106,30 @@ function AdminView() {
   };
 
   if (!loggedIn) return <AdminLogin onLogin={handleLogin} />;
+
   return (
     <div>
-      <nav className="navbar navbar-expand-lg" style={{ background: "#0077b5" }}>
+      <nav
+        className="navbar navbar-expand-lg"
+        style={{ background: "#0077b5" }}
+      >
         <div className="container-fluid">
-          <span className="navbar-brand text-white fw-bold">Smart Power Meter (Admin)</span>
-          <button className="btn btn-outline-light ms-auto" onClick={handleLogout}>Logout</button>
+          <span className="navbar-brand text-white fw-bold">
+            Smart Power Meter (Admin)
+          </span>
+          <button
+            className="btn btn-outline-light ms-auto"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
       </nav>
       <main className="container py-4">
         <CebDataManager />
+        <div className="mt-4">
+          <DailyUsageViewer />
+        </div>
       </main>
     </div>
   );

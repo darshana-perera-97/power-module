@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 
 class DevicePage extends StatefulWidget {
   final String deviceKey;
-
   const DevicePage({Key? key, required this.deviceKey}) : super(key: key);
 
   @override
@@ -17,348 +16,434 @@ class DevicePage extends StatefulWidget {
 
 class _DevicePageState extends State<DevicePage> {
   int _currentIndex = 0;
-
-  Map<String, dynamic>? deviceData;
-  Map<String, dynamic>? cebData;
+  Map<String, dynamic>? deviceData, cebData;
   List<Map<String, dynamic>> deviceHistory = [];
   String? error;
-
-  Timer? timer;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
-    _fetchHistory();
-    timer = Timer.periodic(Duration(seconds: 3), (_) {
-      _fetchData();
-      _fetchHistory();
-    });
+    _refreshAll();
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _refreshAll());
   }
 
   @override
   void dispose() {
-    timer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
+  Future<void> _refreshAll() async {
+    await Future.wait([_fetchData(), _fetchHistory()]);
+  }
+
   Future<void> _fetchData() async {
-    final deviceUrl =
-        Uri.parse('http://localhost:3020/currentState?device=${widget.deviceKey}');
-    final cebUrl = Uri.parse('http://localhost:3020/cebData');
-
     try {
-      final deviceResp = await http.get(deviceUrl);
-      final cebResp = await http.get(cebUrl);
-
-      if (deviceResp.statusCode == 200 && cebResp.statusCode == 200) {
-        final deviceJson = json.decode(deviceResp.body);
-        final cebJson = json.decode(cebResp.body);
-
-        if (mounted) {
-          setState(() {
-            deviceData = deviceJson;
-            cebData = cebJson;
-            error = null;
-          });
-        }
+      final devR = await http.get(
+        Uri.parse(
+          'http://localhost:3020/currentState?device=${widget.deviceKey}',
+        ),
+      );
+      final cebR = await http.get(Uri.parse('http://localhost:3020/cebData'));
+      if (devR.statusCode == 200 && cebR.statusCode == 200) {
+        setState(() {
+          deviceData = json.decode(devR.body);
+          cebData = json.decode(cebR.body);
+          error = null;
+        });
       } else {
-        if (mounted) {
-          setState(() {
-            error = 'Failed to load data from server.';
-          });
-        }
+        setState(
+          () => error = 'Server error: ${devR.statusCode} & ${cebR.statusCode}',
+        );
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          error = e.toString();
-        });
-      }
+      setState(() => error = e.toString());
     }
   }
 
   Future<void> _fetchHistory() async {
-    final historyUrl =
-        Uri.parse('http://localhost:3020/deviceHistory?device=${widget.deviceKey}');
     try {
-      final response = await http.get(historyUrl);
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (mounted) {
-          setState(() {
-            deviceHistory = List<Map<String, dynamic>>.from(data);
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            error = 'Failed to load history data.';
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+      final r = await http.get(
+        Uri.parse(
+          'http://localhost:3020/deviceHistory?device=${widget.deviceKey}',
+        ),
+      );
+      if (r.statusCode == 200) {
         setState(() {
-          error = e.toString();
+          deviceHistory = List<Map<String, dynamic>>.from(json.decode(r.body));
         });
       }
+    } catch (_) {
+      // ignore
     }
   }
 
-  double calculateCost() {
+  double _calcCost() {
     if (deviceData == null || cebData == null) return 0;
-
-    final data = deviceData!['data'] ?? {};
-    final totalpower = data['totalpower'];
-    if (totalpower == null) return 0;
-
-    final power = double.tryParse(totalpower.toString()) ?? 0;
-
-    final List<String> ranges = List<String>.from(cebData!['ranges'] ?? []);
-    final List<dynamic> monthlyCost = cebData!['monthlyCost'] ?? [];
-    final List<dynamic> unitPrice = cebData!['unitPrice'] ?? [];
-
-    double cost = 0;
-    bool found = false;
-
-    for (int i = 0; i < ranges.length; i++) {
-      final parts = ranges[i].split('-');
-      if (parts.length != 2) continue;
-      final min = double.tryParse(parts[0]) ?? 0;
-      final max = double.tryParse(parts[1]) ?? 0;
-      if (power >= min && power <= max) {
-        final fixed = monthlyCost[i] is num ? monthlyCost[i].toDouble() : 0;
-        final unit = unitPrice[i] is num ? unitPrice[i].toDouble() : 0;
-        cost = fixed + unit * power;
-        found = true;
-        break;
+    final p =
+        double.tryParse('${deviceData!['data']?['totalpower'] ?? 0}') ?? 0;
+    final ranges = List<String>.from(cebData!['ranges'] ?? []);
+    final costs = cebData!['monthlyCost'] as List<dynamic>;
+    final units = cebData!['unitPrice'] as List<dynamic>;
+    for (var i = 0; i < ranges.length; i++) {
+      final parts = ranges[i]
+          .split('-')
+          .map((s) => double.tryParse(s) ?? 0)
+          .toList();
+      if (parts.length == 2 && p >= parts[0] && p <= parts[1]) {
+        return (costs[i] + units[i] * p).toDouble();
       }
     }
-
-    if (!found && ranges.isNotEmpty) {
-      final lastIndex = ranges.length - 1;
-      final fixed = monthlyCost[lastIndex] is num ? monthlyCost[lastIndex].toDouble() : 0;
-      final unit = unitPrice[lastIndex] is num ? unitPrice[lastIndex].toDouble() : 0;
-      cost = fixed + unit * power;
+    if (ranges.isNotEmpty) {
+      final last = ranges.length - 1;
+      return (costs[last] + units[last] * p).toDouble();
     }
-
-    return cost;
+    return 0;
   }
 
-  Widget _buildHomeTab() {
-    if (deviceData == null) return _loadingOrError();
-
-    final data = deviceData!['data'] ?? {};
-    final cost = calculateCost();
-
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.monetization_on, color: Colors.green),
-            title: Text("Estimated Cost"),
-            subtitle: Text("Rs. ${cost.toStringAsFixed(2)}"),
-          ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.flash_on),
-            title: Text("Live Power"),
-            trailing: Text("${data['livepower'] ?? '-'} W"),
-          ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.power),
-            title: Text("Total Power"),
-            trailing: Text("${data['totalpower'] ?? '-'} W"),
-          ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.electrical_services),
-            title: Text("Current"),
-            trailing: Text("${data['current'] ?? '-'} A"),
-          ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.bolt),
-            title: Text("Voltage"),
-            trailing: Text("${data['voltage'] ?? '-'} V"),
-          ),
-        ),
-      ],
-    );
+  // --- NEW: Greeting Helpers ---
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    if (hour < 20) return 'Good Evening';
+    return 'Good Night';
   }
 
-  Widget _buildDeviceTab() {
-    if (deviceData == null) return _loadingOrError();
-
-    final data = deviceData!['data'] ?? {};
-    final deviceStatus = deviceData!['deviceStatus'] ?? false;
-
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.battery_charging_full),
-            title: Text("Battery"),
-            trailing: Text("${data['battery'] ?? '-'}%"),
+  Widget _greeting() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hello, Darshana!',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.settings_input_antenna),
-            title: Text("Status"),
-            trailing: Text(deviceStatus ? "🟢 Active" : "🔴 Inactive"),
-          ),
-        ),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.devices_other),
-            title: Text("Device ID"),
-            trailing: Text("${data['device'] ?? '-'}"),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAnalyticsTab() {
-    if (deviceHistory.isEmpty) return _loadingOrError();
-
-    List<String> timeLabels = deviceHistory.map((e) {
-      final dt = DateTime.parse(e['time']);
-      return DateFormat('HH:mm').format(dt); // Format like "14:00"
-    }).toList();
-
-    List<FlSpot> powerSpots = [];
-    List<FlSpot> voltageSpots = [];
-    List<FlSpot> costSpots = [];
-
-    for (int i = 0; i < deviceHistory.length; i++) {
-      final entry = deviceHistory[i];
-      powerSpots.add(FlSpot(i.toDouble(), (entry['livepower'] ?? 0).toDouble()));
-      voltageSpots.add(FlSpot(i.toDouble(), (entry['voltage'] ?? 0).toDouble()));
-      costSpots.add(FlSpot(i.toDouble(), (entry['calculatedCost'] ?? 0).toDouble()));
-    }
-
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        Text("📊 Live Power Over Time", style: TextStyle(fontSize: 18)),
-        SizedBox(height: 200, child: _buildLineChart(powerSpots, timeLabels)),
-        SizedBox(height: 20),
-        Text("🔌 Voltage Over Time", style: TextStyle(fontSize: 18)),
-        SizedBox(height: 200, child: _buildLineChart(voltageSpots, timeLabels)),
-        SizedBox(height: 20),
-        Text("💸 Cost Over Time", style: TextStyle(fontSize: 18)),
-        SizedBox(height: 200, child: _buildLineChart(costSpots, timeLabels)),
-      ],
-    );
-  }
-
-  LineChart _buildLineChart(List<FlSpot> spots, List<String> timeLabels) {
-    return LineChart(
-      LineChartData(
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: Colors.indigo,
-            barWidth: 2,
-            dotData: FlDotData(show: false),
+          const SizedBox(height: 4),
+          Text(
+            _getGreeting(),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                int index = value.toInt();
-                if (index < 0 || index >= timeLabels.length) return Container();
-                return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  child: Text(timeLabels[index], style: TextStyle(fontSize: 10)),
-                );
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true, interval: null),
-          ),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: true),
-        gridData: FlGridData(show: true),
       ),
     );
   }
+  // --- END Greeting Helpers ---
 
-  Widget _buildProfileTab() {
-    if (deviceData == null) return _loadingOrError();
+  Widget _card({required Widget child}) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(padding: const EdgeInsets.all(12), child: child),
+    );
+  }
 
-    final deviceId = deviceData!['data']?['device'] ?? widget.deviceKey;
+  Widget _loading() => const Center(child: CircularProgressIndicator());
+
+  Widget _error() => Center(
+    child: Text(
+      error ?? 'Unknown error',
+      style: const TextStyle(color: Colors.red),
+    ),
+  );
+
+  Widget _labelValue(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14)),
+        Text(value, style: const TextStyle(fontSize: 14)),
+      ],
+    );
+  }
+
+  Widget _homeTab() {
+    if (error != null) return _error();
+    if (deviceData == null || cebData == null) return _loading();
+
+    final data = deviceData!['data'] as Map<String, dynamic>;
+    final cost = _calcCost();
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      children: [
+        _greeting(),
+        // Prominent Cost
+        _card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                "Estimated Cost",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Rs. ${cost.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Power Usage
+        const Text(
+          "Power Usage",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _card(
+                child: _labelValue(
+                  "Live Power",
+                  "${data['livepower'] ?? '-'} W",
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _card(
+                child: _labelValue(
+                  "Total Power",
+                  "${data['totalpower'] ?? '-'} W",
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Current Quality
+        const Text(
+          "Current Quality",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _card(
+                child: _labelValue("Current", "${data['current'] ?? '-'} A"),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _card(
+                child: _labelValue("Voltage", "${data['voltage'] ?? '-'} V"),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _deviceTab() {
+    if (error != null) return _error();
+    if (deviceData == null) return _loading();
+
+    final d = deviceData!['data'] as Map<String, dynamic>;
+    final active = deviceData!['deviceStatus'] == true;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      children: [
+        _greeting(),
+        // --- Prominent Status Card ---
+        _card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                "Device Status",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                active ? "🟢 Active" : "🔴 Inactive",
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // --- Device Info Section ---
+        const Text(
+          "Device Info",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _card(
+                child: _labelValue("Battery", "${d['battery'] ?? '-'}%"),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _card(
+                child: _labelValue("Device ID", "${d['device'] ?? '-'}"),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _analyticsTab() {
+    if (error != null) return _error();
+    if (deviceHistory.isEmpty) return _loading();
+
+    final labels = deviceHistory
+        .map((e) => DateFormat('HH:mm').format(DateTime.parse(e['time'])))
+        .toList();
+
+    List<FlSpot> _spots(String key) => [
+      for (var i = 0; i < deviceHistory.length; i++)
+        FlSpot(i.toDouble(), (deviceHistory[i][key] ?? 0).toDouble()),
+    ];
+
+    Widget chart(String title, String key) {
+      return _card(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 140,
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _spots(key),
+                      isCurved: true,
+                      dotData: FlDotData(show: false),
+                      barWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (v, meta) {
+                          final i = v.toInt();
+                          if (i < 0 || i >= labels.length)
+                            return const SizedBox.shrink();
+                          return Text(
+                            labels[i],
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                  ),
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      children: [
+        _greeting(),
+        chart("Live Power Over Time", 'livepower'),
+        chart("Voltage Over Time", 'voltage'),
+        chart("Cost Over Time", 'calculatedCost'),
+      ],
+    );
+  }
+
+  Widget _profileTab() {
+    if (error != null) return _error();
+    if (deviceData == null) return _loading();
+
+    final id = deviceData!['data']?['device'] ?? widget.deviceKey;
 
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(vertical: 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            _greeting(),
             CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=$deviceId'),
-              onBackgroundImageError: (error, stackTrace) {
-                debugPrint('Avatar image failed to load: $error');
-              },
-              child: Icon(Icons.person, size: 50, color: Colors.white70), // fallback icon while loading
+              radius: 40,
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=$id'),
             ),
-            SizedBox(height: 16),
-            Text("Device ID: $deviceId",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text(
+              "Device ID: $id",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _loadingOrError() {
-    if (error != null) {
-      return Center(child: Text("Error: $error", style: TextStyle(color: Colors.red)));
-    }
-    return Center(child: CircularProgressIndicator());
-  }
-
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      _buildHomeTab(),
-      _buildDeviceTab(),
-      _buildAnalyticsTab(),
-      _buildProfileTab(),
-    ];
+    final pages = [_homeTab(), _deviceTab(), _analyticsTab(), _profileTab()];
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text("Smart Power Meter"),
+        title: const Text("Smart Power Meter"),
+        elevation: 0,
+        backgroundColor: Colors.grey[50],
+        foregroundColor: Colors.black87,
       ),
-      body: pages[_currentIndex],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: pages[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey[600],
+        onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.devices), label: "Device"),
-          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: "Analytics"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics),
+            label: "Analytics",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),

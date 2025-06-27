@@ -4,7 +4,7 @@ import Card from "react-bootstrap/Card";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
-import { BsFillLightningFill, BsArrowRepeat } from "react-icons/bs";
+import { BsArrowRepeat } from "react-icons/bs";
 
 export default function DeviceSelector({ onDeviceSelect }) {
   const [devices, setDevices] = useState([]);
@@ -21,7 +21,7 @@ export default function DeviceSelector({ onDeviceSelect }) {
       const keys = await fetchDeviceKeys();
       setDevices(keys);
     } catch (err) {
-      setError(err.message || "Unknown error");
+      setError(err.message || "Failed to fetch devices.");
     } finally {
       setLoading(false);
     }
@@ -46,39 +46,49 @@ export default function DeviceSelector({ onDeviceSelect }) {
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-      <Card className="shadow" style={{ minWidth: 350, maxWidth: 400 }}>
-        <Card.Header style={{ background: "#0077b5" }}>
-          <span className="text-white fw-bold">
-            <BsFillLightningFill className="me-2" />Select a Device
-          </span>
-        </Card.Header>
+      <Card className="border-0 shadow-sm" style={{ minWidth: 320, maxWidth: 380 }}>
         <Card.Body>
-          <p className="mb-3 text-muted">Choose your smart power meter device to view its status and history.</p>
+          <h5 className="mb-3 text-center fw-semibold">Select a Device</h5>
+          <p className="text-muted small text-center mb-4">
+            Choose a device to start monitoring your smart power meter.
+          </p>
+
           {loading ? (
             <div className="d-flex align-items-center justify-content-center my-3">
-              <Spinner animation="border" variant="primary" size="sm" className="me-2" />
-              Loading devices…
+              <Spinner animation="border" size="sm" className="me-2" />
+              <span className="text-muted">Loading...</span>
             </div>
           ) : error ? (
-            <div className="alert alert-danger py-1">{error}</div>
+            <div className="alert alert-light border-danger text-danger small">
+              {error}
+              <div className="text-end mt-2">
+                <Button variant="outline-danger" size="sm" onClick={loadDevices}>
+                  <BsArrowRepeat className="me-1" />
+                  Retry
+                </Button>
+              </div>
+            </div>
           ) : devices.length === 0 ? (
-            <div className="text-center text-muted">
-              <em>No devices found.</em>
-              <Button variant="outline-primary" size="sm" className="ms-2" onClick={loadDevices}>
-                <BsArrowRepeat /> Refresh
-              </Button>
+            <div className="text-center text-muted small">
+              No devices found.
+              <div className="mt-2">
+                <Button variant="outline-secondary" size="sm" onClick={loadDevices}>
+                  <BsArrowRepeat className="me-1" />
+                  Refresh
+                </Button>
+              </div>
             </div>
           ) : (
             <Form>
               <Form.Group controlId="deviceSelect">
-                <Form.Label className="fw-semibold">Device List</Form.Label>
                 <Form.Select
                   defaultValue=""
-                  onChange={e => handleSelect(e.target.value)}
+                  onChange={(e) => handleSelect(e.target.value)}
                   aria-label="Select device"
+                  className="mb-3"
                 >
                   <option value="" disabled>
-                    -- Choose Device --
+                    -- Choose a Device --
                   </option>
                   {devices.map((key) => (
                     <option key={key} value={key}>
@@ -87,9 +97,10 @@ export default function DeviceSelector({ onDeviceSelect }) {
                   ))}
                 </Form.Select>
               </Form.Group>
-              <div className="d-flex justify-content-end mt-3">
+              <div className="d-flex justify-content-end">
                 <Button variant="outline-primary" size="sm" onClick={loadDevices}>
-                  <BsArrowRepeat className="me-1" />Refresh List
+                  <BsArrowRepeat className="me-1" />
+                  Refresh List
                 </Button>
               </div>
             </Form>

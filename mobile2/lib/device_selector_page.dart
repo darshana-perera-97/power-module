@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'device_page.dart';  // Adjust path if needed
+import 'device_page.dart'; // adjust path if needed
 
 class DeviceSelectorPage extends StatefulWidget {
   @override
@@ -10,167 +10,198 @@ class DeviceSelectorPage extends StatefulWidget {
 }
 
 class _DeviceSelectorPageState extends State<DeviceSelectorPage> {
+  static const String apiUrl = 'http://localhost:3020/firebase';
+
   List<String> deviceKeys = [];
-  bool loading = true;
-  String? error;
   String? selectedDevice;
-
-  final String localInfo = "Please select a device from the list below:";
-
-  final String apiUrl = 'http://localhost:3020/firebase'; // Update IP if needed
+  bool loading = true;
+  String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    loadSelectedDevice();
-    fetchDevices();
+    _init();
   }
 
-  Future<void> loadSelectedDevice() async {
+  Future<void> _init() async {
+    await _loadSavedDevice();
+    await _fetchDevices();
+  }
+
+  Future<void> _loadSavedDevice() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedDevice = prefs.getString('selectedDevice');
-    if (savedDevice != null) {
-      setState(() {
-        selectedDevice = savedDevice;
-      });
+    final saved = prefs.getString('selectedDevice');
+    if (saved != null) {
+      setState(() => selectedDevice = saved);
     }
   }
 
-  Future<void> fetchDevices() async {
+  Future<void> _fetchDevices() async {
     setState(() {
       loading = true;
-      error = null;
+      errorMessage = null;
     });
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        if (!mounted) return;
         setState(() {
           deviceKeys = data.keys.toList();
           loading = false;
-
-          // If saved selectedDevice no longer exists, reset it
+          // If the previously saved device has disappeared, clear it
           if (selectedDevice != null && !deviceKeys.contains(selectedDevice)) {
             selectedDevice = null;
           }
         });
       } else {
-        if (!mounted) return;
         setState(() {
-          error = "Failed to load data: ${response.statusCode}";
+          errorMessage = 'Failed to fetch (${response.statusCode})';
           loading = false;
         });
       }
     } catch (e) {
-      if (!mounted) return;
       setState(() {
-        error = "Error: $e";
+        errorMessage = 'Error: $e';
         loading = false;
       });
     }
   }
 
-  Future<void> selectDevice(String? deviceKey) async {
-    if (deviceKey == null) return;
+  Future<void> _selectDevice(String key) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedDevice', deviceKey);
-
-    if (!mounted) return;
-
-    setState(() {
-      selectedDevice = deviceKey;
-    });
+    await prefs.setString('selectedDevice', key);
+    setState(() => selectedDevice = key);
   }
 
-  void navigateToDevicePage() {
+  void _goNext() {
     if (selectedDevice == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DevicePage(deviceKey: selectedDevice!),
-      ),
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DevicePage(deviceKey: selectedDevice!)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text("Select Device")),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (error != null) {
-      return Scaffold(
-        appBar: AppBar(title: Text("Select Device")),
-        body: Center(child: Text(error!, style: TextStyle(color: Colors.red))),
-      );
-    }
+    if (loading) return _buildLoading();
+    if (errorMessage != null) return _buildError();
 
     return Scaffold(
-      appBar: AppBar(title: Text("Select Device")),
+      backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      localInfo,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  if (selectedDevice != null)
-                    Text(
-                      'Selected: $selectedDevice',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                ],
+              // 1) Header
+              Text(
+                'Hello, Darshana!',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 4),
+              Text(
+                'Please select a device:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: 24),
 
-              DropdownButtonFormField<String>(
-                value: selectedDevice != null && deviceKeys.contains(selectedDevice)
-                    ? selectedDevice
-                    : null,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              // 2) Grid of card options
+              Expanded(
+                child: GridView.builder(
+                  itemCount: deviceKeys.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.1,
+                  ),
+                  itemBuilder: (ctx, i) {
+                    final key = deviceKeys[i];
+                    final isSelected = key == selectedDevice;
+                    return GestureDetector(
+                      onTap: () => _selectDevice(key),
+                      child: Card(
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        color: Colors.white,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.devices,
+                                size: 36,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey[600],
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Device $key',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey[800],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                hint: Text("Select a device"),
-                items: deviceKeys.map((device) {
-                  return DropdownMenuItem<String>(
-                    value: device,
-                    child: Text('Device $device'),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedDevice = value;
-                  });
-                  selectDevice(value);
-                },
               ),
-              SizedBox(height: 30),
-              Center(
-                child: ElevatedButton(
-                  onPressed: selectedDevice == null ? null : navigateToDevicePage,
-                  child: Text("Go to Device Page"),
+
+              // 3) Continue button
+              SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: selectedDevice == null ? null : _goNext,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child: Text('Continue', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+
+  Widget _buildError() {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              errorMessage ?? 'Unknown error',
+              style: TextStyle(color: Colors.red),
+            ),
+            SizedBox(height: 12),
+            ElevatedButton(onPressed: _fetchDevices, child: Text('Retry')),
+          ],
         ),
       ),
     );
