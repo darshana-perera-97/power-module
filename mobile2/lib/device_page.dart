@@ -18,6 +18,7 @@ class _DevicePageState extends State<DevicePage> {
   int _currentIndex = 0;
   Map<String, dynamic>? deviceData, cebData;
   List<Map<String, dynamic>> deviceHistory = [];
+  bool _historyLoaded = false;
   String? error;
   Timer? _timer;
 
@@ -65,17 +66,22 @@ class _DevicePageState extends State<DevicePage> {
   Future<void> _fetchHistory() async {
     try {
       final r = await http.get(
-        Uri.parse(
-          'http://localhost:3020/deviceHistory?device=${widget.deviceKey}',
-        ),
+        Uri.parse('http://localhost:3020/pastData?device=${widget.deviceKey}'),
       );
       if (r.statusCode == 200) {
         setState(() {
           deviceHistory = List<Map<String, dynamic>>.from(json.decode(r.body));
+          _historyLoaded = true;
+        });
+      } else {
+        setState(() {
+          _historyLoaded = true;
         });
       }
     } catch (_) {
-      // ignore
+      setState(() {
+        _historyLoaded = true;
+      });
     }
   }
 
@@ -102,7 +108,7 @@ class _DevicePageState extends State<DevicePage> {
     return 0;
   }
 
-  // --- NEW: Greeting Helpers ---
+  // --- Greeting Helpers ---
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning';
@@ -142,7 +148,6 @@ class _DevicePageState extends State<DevicePage> {
   }
 
   Widget _loading() => const Center(child: CircularProgressIndicator());
-
   Widget _error() => Center(
     child: Text(
       error ?? 'Unknown error',
@@ -171,7 +176,6 @@ class _DevicePageState extends State<DevicePage> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       children: [
         _greeting(),
-        // Prominent Cost
         _card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -192,7 +196,6 @@ class _DevicePageState extends State<DevicePage> {
           ),
         ),
         const SizedBox(height: 16),
-        // Power Usage
         const Text(
           "Power Usage",
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -220,7 +223,6 @@ class _DevicePageState extends State<DevicePage> {
           ],
         ),
         const SizedBox(height: 16),
-        // Current Quality
         const Text(
           "Current Quality",
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -256,7 +258,6 @@ class _DevicePageState extends State<DevicePage> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       children: [
         _greeting(),
-        // --- Prominent Status Card ---
         _card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -277,7 +278,6 @@ class _DevicePageState extends State<DevicePage> {
           ),
         ),
         const SizedBox(height: 16),
-        // --- Device Info Section ---
         const Text(
           "Device Info",
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -304,83 +304,72 @@ class _DevicePageState extends State<DevicePage> {
 
   Widget _analyticsTab() {
     if (error != null) return _error();
-    if (deviceHistory.isEmpty) return _loading();
+    if (!_historyLoaded) return _loading();
 
-    final labels = deviceHistory
-        .map((e) => DateFormat('HH:mm').format(DateTime.parse(e['time'])))
-        .toList();
+    return Column(
+      children: [
+        _greeting(),
+        Expanded(
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Scrollbar(
+                thumbVisibility: true,
+                notificationPredicate: (notif) => notif.depth == 1,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Time')),
+                      DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Battery (%)')),
+                      DataColumn(label: Text('Current (A)')),
+                      DataColumn(label: Text('Device')),
+                      DataColumn(label: Text('Key')),
+                      DataColumn(label: Text('Live Power (W)')),
+                      DataColumn(label: Text('Total Power (W)')),
+                      DataColumn(label: Text('Voltage (V)')),
+                      DataColumn(label: Text('Cost')),
+                    ],
+                    rows: deviceHistory.map((entry) {
+                      final time = DateFormat(
+                        'HH:mm',
+                      ).format(DateTime.parse(entry['time']));
+                      final status = entry['status']?.toString() ?? '-';
+                      final battery = entry['battery']?.toString() ?? '-';
+                      final current = entry['current']?.toString() ?? '-';
+                      final deviceId = entry['device']?.toString() ?? '-';
+                      final keyVal = entry['key']?.toString() ?? '-';
+                      final livepower = entry['livepower']?.toString() ?? '-';
+                      final totalpower = entry['totalpower']?.toString() ?? '-';
+                      final voltage = entry['voltage']?.toString() ?? '-';
+                      final costValue = entry['calculatedCost'];
+                      final cost = costValue is num
+                          ? costValue.toDouble().toStringAsFixed(2)
+                          : costValue?.toString() ?? '-';
 
-    List<FlSpot> _spots(String key) => [
-      for (var i = 0; i < deviceHistory.length; i++)
-        FlSpot(i.toDouble(), (deviceHistory[i][key] ?? 0).toDouble()),
-    ];
-
-    Widget chart(String title, String key) {
-      return _card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 140,
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: _spots(key),
-                      isCurved: true,
-                      dotData: FlDotData(show: false),
-                      barWidth: 2,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        getTitlesWidget: (v, meta) {
-                          final i = v.toInt();
-                          if (i < 0 || i >= labels.length)
-                            return const SizedBox.shrink();
-                          return Text(
-                            labels[i],
-                            style: const TextStyle(fontSize: 10),
-                          );
-                        },
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(time)),
+                          DataCell(Text(status)),
+                          DataCell(Text(battery)),
+                          DataCell(Text(current)),
+                          DataCell(Text(deviceId)),
+                          DataCell(Text(keyVal)),
+                          DataCell(Text(livepower)),
+                          DataCell(Text(totalpower)),
+                          DataCell(Text(voltage)),
+                          DataCell(Text(cost)),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  gridData: FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      children: [
-        _greeting(),
-        chart("Live Power Over Time", 'livepower'),
-        chart("Voltage Over Time", 'voltage'),
-        chart("Cost Over Time", 'calculatedCost'),
       ],
     );
   }
