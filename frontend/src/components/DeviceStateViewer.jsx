@@ -37,7 +37,7 @@ export default function DeviceStateViewer({ deviceId }) {
 
   if (error) {
     return (
-      <div className="alert-modern alert-modern-danger">
+      <div className="alert alert-error">
         <FiXCircle />
         <strong>Error:</strong> {error}
       </div>
@@ -46,9 +46,9 @@ export default function DeviceStateViewer({ deviceId }) {
   
   if (!deviceData || !cebData) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-modern mx-auto mb-3"></div>
-        <p className="text-muted">Loading device data...</p>
+      <div className="loading">
+        <div className="spinner"></div>
+        <span className="loading-text">Loading device data...</span>
       </div>
     );
   }
@@ -76,6 +76,23 @@ export default function DeviceStateViewer({ deviceId }) {
     const unit = cebData.unitPrice[lastIndex];
     cost = fixed + unit * power;
   }
+
+  // Format timestamp for display
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return timestamp; // Fallback to original if parsing fails
+    }
+  };
 
   const statsData = [
     {
@@ -115,7 +132,7 @@ export default function DeviceStateViewer({ deviceId }) {
     },
     {
       title: "Last Updated",
-      value: time,
+      value: formatTimestamp(time),
       unit: "timestamp",
       icon: FiClock,
       color: "secondary"
@@ -124,69 +141,69 @@ export default function DeviceStateViewer({ deviceId }) {
 
   const getColorClass = (color) => {
     const colors = {
-      primary: 'var(--primary-color)',
-      success: 'var(--success-color)',
-      warning: 'var(--warning-color)',
-      danger: 'var(--danger-color)',
-      info: 'var(--info-color)',
-      secondary: 'var(--secondary-color)'
+      primary: 'var(--primary)',
+      success: 'var(--success)',
+      warning: 'var(--warning)',
+      danger: 'var(--danger)',
+      info: 'var(--info)',
+      secondary: 'var(--secondary)'
     };
     return colors[color] || colors.primary;
   };
 
   return (
     <div>
-      <div className="grid-modern grid-modern-3">
+      <div className="stats-grid">
         {statsData.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
-            <div key={index} className="stats-card">
-              <div className="stats-card-header">
-                <div className="stats-card-title">{stat.title}</div>
-                <div className="stats-card-icon" style={{ background: `linear-gradient(135deg, ${getColorClass(stat.color)}, ${getColorClass(stat.color)}dd)` }}>
+            <div key={index} className="stat-card">
+              <div className="stat-header">
+                <div className="stat-title">{stat.title}</div>
+                <div className="stat-icon" style={{ color: getColorClass(stat.color) }}>
                   <IconComponent size={20} />
                 </div>
               </div>
-              <div className="stats-card-value" style={{ color: getColorClass(stat.color) }}>
+              <div className="stat-value" style={{ color: getColorClass(stat.color) }}>
                 {stat.value}
               </div>
-              <div className="stats-card-unit">{stat.unit}</div>
+              <div className="stat-unit">{stat.unit}</div>
             </div>
           );
         })}
       </div>
 
       {/* Additional Measurements */}
-      <div className="mt-5">
-        <h4 className="mb-4 fw-semibold text-muted">
-          <FiActivity className="me-2" />
+      <div className="content-section">
+        <h2 className="section-title">
+          <FiActivity />
           Electrical Measurements
-        </h4>
-        <div className="grid-modern grid-modern-2">
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-card-title">Current</div>
-              <div className="stats-card-icon" style={{ background: 'linear-gradient(135deg, var(--info-color), var(--info-color)dd)' }}>
+        </h2>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-title">Current</div>
+              <div className="stat-icon" style={{ color: 'var(--info)' }}>
                 <FiZap size={20} />
               </div>
             </div>
-            <div className="stats-card-value" style={{ color: 'var(--info-color)' }}>
+            <div className="stat-value" style={{ color: 'var(--info)' }}>
               {current}
             </div>
-            <div className="stats-card-unit">Amperes</div>
+            <div className="stat-unit">Amperes</div>
           </div>
           
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-card-title">Voltage</div>
-              <div className="stats-card-icon" style={{ background: 'linear-gradient(135deg, var(--warning-color), var(--warning-color)dd)' }}>
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-title">Voltage</div>
+              <div className="stat-icon" style={{ color: 'var(--warning)' }}>
                 <FiZap size={20} />
               </div>
             </div>
-            <div className="stats-card-value" style={{ color: 'var(--warning-color)' }}>
+            <div className="stat-value" style={{ color: 'var(--warning)' }}>
               {voltage}
             </div>
-            <div className="stats-card-unit">Volts</div>
+            <div className="stat-unit">Volts</div>
           </div>
         </div>
       </div>

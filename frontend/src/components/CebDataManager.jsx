@@ -78,39 +78,37 @@ const CebDataManager = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-modern mx-auto mb-3"></div>
-        <p className="text-muted">Loading CEB data...</p>
+      <div className="loading">
+        <div className="spinner"></div>
+        <span className="loading-text">Loading CEB data...</span>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="dashboard-header">
-        <h2 className="dashboard-title">
-          <FiSettings className="me-3" style={{ color: 'var(--primary-color)' }} />
-          CEB Rate Management
-        </h2>
-        <p className="dashboard-subtitle">
-          Configure electricity rates and monthly costs for different usage ranges
-        </p>
-      </div>
-
-      <div className="modern-card">
-        <div className="modern-card-header">
-          <FiSettings className="me-2" />
-          Unit Rate Configuration
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <FiSettings style={{ color: 'var(--primary)', marginRight: 'var(--space-3)' }} />
+            Unit Rate Configuration
+          </div>
         </div>
-        <div className="modern-card-body">
-          <div className="table-responsive">
-            <table className="table table-modern">
+        <div className="card-body">
+          <div className="table-container">
+            <table className="table">
               <thead>
                 <tr>
                   <th className="text-start fw-semibold">Type</th>
                   {cebData.ranges.map((range, idx) => (
                     <th key={idx} className="text-center">
-                      <span className="badge bg-primary rounded-pill">{range}</span>
+                      <span className="badge" style={{ 
+                        background: 'var(--primary)', 
+                        color: 'var(--white)', 
+                        padding: 'var(--space-1) var(--space-3)',
+                        borderRadius: 'var(--radius-lg)',
+                        fontSize: 'var(--font-size-sm)'
+                      }}>{range}</span>
                     </th>
                   ))}
                 </tr>
@@ -125,7 +123,7 @@ const CebDataManager = () => {
                     <td key={idx} className="text-center">
                       <input
                         type="number"
-                        className="form-control-modern text-center"
+                        className="form-input text-center"
                         value={value}
                         onChange={(e) => handleCostChange(idx, e.target.value)}
                         style={{ width: '100px', margin: '0 auto' }}
@@ -143,7 +141,7 @@ const CebDataManager = () => {
                     <td key={idx} className="text-center">
                       <input
                         type="number"
-                        className="form-control-modern text-center"
+                        className="form-input text-center"
                         value={value}
                         onChange={(e) => handlePriceChange(idx, e.target.value)}
                         style={{ width: '100px', margin: '0 auto' }}
@@ -158,13 +156,13 @@ const CebDataManager = () => {
 
           <div className="d-flex justify-content-end mt-4">
             <button
-              className="btn-modern btn-modern-success"
+              className="btn btn-primary"
               onClick={handleSubmit}
               disabled={status === "saving"}
             >
               {status === "saving" ? (
                 <>
-                  <div className="spinner-modern"></div>
+                  <div className="spinner"></div>
                   Saving...
                 </>
               ) : (
@@ -177,8 +175,8 @@ const CebDataManager = () => {
           </div>
 
           {message && (
-            <div className={`alert-modern mt-4 ${
-              status === "success" ? "alert-modern-success" : "alert-modern-danger"
+            <div className={`alert mt-4 ${
+              status === "success" ? "alert-success" : "alert-error"
             }`}>
               {status === "success" ? <FiCheckCircle /> : <FiAlertCircle />}
               {message}
@@ -188,28 +186,38 @@ const CebDataManager = () => {
       </div>
 
       {/* Information Card */}
-      <div className="modern-card mt-4">
-        <div className="modern-card-header">
-          <FiAlertCircle className="me-2" />
-          How It Works
+      <div className="card mt-4">
+        <div className="card-header">
+          <div className="card-title">
+            <FiAlertCircle style={{ color: 'var(--warning)', marginRight: 'var(--space-3)' }} />
+            How It Works
+          </div>
         </div>
-        <div className="modern-card-body">
-          <div className="row">
-            <div className="col-md-6">
+        <div className="card-body">
+          <div className="stats-grid">
+            <div>
               <h6 className="fw-semibold mb-3">Monthly Cost</h6>
               <p className="text-muted small">
-                Fixed monthly charges for each usage range. This is the base cost regardless of consumption.
+                Fixed monthly charges applied regardless of usage. This covers basic service fees and infrastructure costs.
               </p>
             </div>
-            <div className="col-md-6">
+            <div>
               <h6 className="fw-semibold mb-3">Unit Price</h6>
               <p className="text-muted small">
-                Cost per kilowatt-hour (kWh) for electricity consumed within each range.
+                Variable cost per kilowatt-hour (kWh) consumed. Higher usage tiers typically have different rates.
               </p>
             </div>
           </div>
-          <div className="mt-3 p-3 bg-light rounded">
-            <strong>Formula:</strong> Total Cost = Monthly Cost + (Total Power × Unit Price)
+          
+          <div className="mt-4 p-4" style={{ 
+            background: 'var(--gray-50)', 
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--gray-200)'
+          }}>
+            <h6 className="fw-semibold mb-2">Calculation Formula</h6>
+            <p className="text-muted small mb-0">
+              <strong>Total Cost = Monthly Cost + (Unit Price × Total Power Consumption)</strong>
+            </p>
           </div>
         </div>
       </div>

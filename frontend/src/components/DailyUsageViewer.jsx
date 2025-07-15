@@ -27,16 +27,16 @@ function DailyUsageViewer() {
 
     if (loading) {
         return (
-            <div className="text-center py-5">
-                <div className="spinner-modern mx-auto mb-3"></div>
-                <p className="text-muted">Loading daily usage data...</p>
+            <div className="loading">
+                <div className="spinner"></div>
+                <span className="loading-text">Loading daily usage data...</span>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="alert-modern alert-modern-danger">
+            <div className="alert alert-error">
                 <FiAlertCircle />
                 <strong>Error:</strong> {error}
             </div>
@@ -45,14 +45,8 @@ function DailyUsageViewer() {
 
     if (!records.length) {
         return (
-            <div className="text-center py-5">
-                <div className="d-inline-flex align-items-center justify-content-center mb-3" style={{ 
-                    width: '60px', 
-                    height: '60px', 
-                    background: 'var(--gray-200)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: 'var(--gray-500)'
-                }}>
+            <div className="text-center">
+                <div className="auth-icon" style={{ background: 'var(--gray-200)', color: 'var(--gray-500)' }}>
                     <FiTrendingUp size={24} />
                 </div>
                 <h5 className="text-muted mb-2">No Usage Data</h5>
@@ -109,43 +103,33 @@ function DailyUsageViewer() {
 
     const getColorClass = (color) => {
         const colors = {
-            primary: 'var(--primary-color)',
-            success: 'var(--success-color)',
-            warning: 'var(--warning-color)',
-            danger: 'var(--danger-color)',
-            info: 'var(--info-color)',
-            secondary: 'var(--secondary-color)'
+            primary: 'var(--primary)',
+            success: 'var(--success)',
+            warning: 'var(--warning)',
+            danger: 'var(--danger)',
+            info: 'var(--info)',
+            secondary: 'var(--secondary)'
         };
         return colors[color] || colors.primary;
     };
 
     return (
         <div>
-            <div className="dashboard-header">
-                <h2 className="dashboard-title">
-                    <FiTrendingUp className="me-3" style={{ color: 'var(--primary-color)' }} />
-                    Daily Usage Analytics
-                </h2>
-                <p className="dashboard-subtitle">
-                    Monitor daily power consumption patterns and trends
-                </p>
-            </div>
-
-            <div className="grid-modern grid-modern-4">
+            <div className="stats-grid">
                 {statsData.map((stat, index) => {
                     const IconComponent = stat.icon;
                     return (
-                        <div key={index} className="stats-card">
-                            <div className="stats-card-header">
-                                <div className="stats-card-title">{stat.title}</div>
-                                <div className="stats-card-icon" style={{ background: `linear-gradient(135deg, ${getColorClass(stat.color)}, ${getColorClass(stat.color)}dd)` }}>
+                        <div key={index} className="stat-card">
+                            <div className="stat-header">
+                                <div className="stat-title">{stat.title}</div>
+                                <div className="stat-icon" style={{ color: getColorClass(stat.color) }}>
                                     <IconComponent size={20} />
                                 </div>
                             </div>
-                            <div className="stats-card-value" style={{ color: getColorClass(stat.color) }}>
+                            <div className="stat-value" style={{ color: getColorClass(stat.color) }}>
                                 {stat.value}
                             </div>
-                            <div className="stats-card-unit">{stat.unit}</div>
+                            <div className="stat-unit">{stat.unit}</div>
                             <div className="mt-2">
                                 <small className="text-muted">{stat.subtitle}</small>
                             </div>
@@ -155,90 +139,96 @@ function DailyUsageViewer() {
             </div>
 
             {/* Recent Usage Table */}
-            <div className="modern-card mt-5">
-                <div className="modern-card-header">
-                    <FiCalendar className="me-2" />
+            <div className="content-section">
+                <h2 className="section-title">
+                    <FiCalendar />
                     Recent Usage History
-                </div>
-                <div className="modern-card-body">
-                    <div className="table-responsive">
-                        <table className="table table-modern">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th className="text-center">Total Usage (kWh)</th>
-                                    <th className="text-center">Status</th>
+                </h2>
+                <div className="table-container">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th className="text-center">Total Usage (kWh)</th>
+                                <th className="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {records.slice(0, 10).map((record, index) => (
+                                <tr key={index}>
+                                    <td className="fw-medium">
+                                        {new Date(record.date).toLocaleDateString('en-US', {
+                                            weekday: 'short',
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </td>
+                                    <td className="text-center fw-bold text-primary">
+                                        {record.totalUsage.toLocaleString()}
+                                    </td>
+                                    <td className="text-center">
+                                        <span className="badge" style={{ 
+                                            background: record.date === today ? 'var(--success)' : 'var(--secondary)', 
+                                            color: 'var(--white)', 
+                                            padding: 'var(--space-1) var(--space-3)',
+                                            borderRadius: 'var(--radius-lg)',
+                                            fontSize: 'var(--font-size-sm)'
+                                        }}>
+                                            {record.date === today ? 'Today' : 'Historical'}
+                                        </span>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {records.slice(0, 10).map((record, index) => (
-                                    <tr key={index}>
-                                        <td className="fw-medium">
-                                            {new Date(record.date).toLocaleDateString('en-US', {
-                                                weekday: 'short',
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            })}
-                                        </td>
-                                        <td className="text-center fw-bold text-primary">
-                                            {record.totalUsage.toLocaleString()}
-                                        </td>
-                                        <td className="text-center">
-                                            <span className={`badge rounded-pill ${
-                                                record.date === today ? 'bg-success' : 'bg-secondary'
-                                            }`}>
-                                                {record.date === today ? 'Today' : 'Historical'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            {/* Usage Insights */}
-            <div className="modern-card mt-4">
-                <div className="modern-card-header">
-                    <FiTrendingUp className="me-2" />
-                    Usage Insights
-                </div>
-                <div className="modern-card-body">
-                    <div className="row">
-                        <div className="col-md-6">
-                            <h6 className="fw-semibold mb-3">Consumption Range</h6>
-                            <div className="d-flex justify-content-between mb-2">
-                                <span className="text-muted">Minimum:</span>
-                                <span className="fw-bold text-success">{minUsage.toFixed(1)} kWh</span>
-                            </div>
-                            <div className="d-flex justify-content-between mb-2">
-                                <span className="text-muted">Maximum:</span>
-                                <span className="fw-bold text-warning">{maxUsage.toFixed(1)} kWh</span>
-                            </div>
-                            <div className="d-flex justify-content-between">
-                                <span className="text-muted">Average:</span>
-                                <span className="fw-bold text-primary">{averageUsage.toFixed(1)} kWh</span>
+            {/* Usage Summary */}
+            <div className="content-section">
+                <h2 className="section-title">
+                    <FiTrendingUp />
+                    Usage Summary
+                </h2>
+                <div className="stats-grid">
+                    <div className="stat-card">
+                        <div className="stat-header">
+                            <div className="stat-title">Total Records</div>
+                            <div className="stat-icon" style={{ color: 'var(--info)' }}>
+                                <FiCalendar size={20} />
                             </div>
                         </div>
-                        <div className="col-md-6">
-                            <h6 className="fw-semibold mb-3">Data Summary</h6>
-                            <div className="d-flex justify-content-between mb-2">
-                                <span className="text-muted">Total Records:</span>
-                                <span className="fw-bold">{records.length}</span>
-                            </div>
-                            <div className="d-flex justify-content-between mb-2">
-                                <span className="text-muted">Total Consumption:</span>
-                                <span className="fw-bold text-primary">{totalUsage.toLocaleString()} kWh</span>
-                            </div>
-                            <div className="d-flex justify-content-between">
-                                <span className="text-muted">Period:</span>
-                                <span className="fw-bold">
-                                    {records.length > 0 ? `${records.length} day${records.length !== 1 ? 's' : ''}` : 'N/A'}
-                                </span>
+                        <div className="stat-value" style={{ color: 'var(--info)' }}>
+                            {records.length}
+                        </div>
+                        <div className="stat-unit">days</div>
+                    </div>
+                    
+                    <div className="stat-card">
+                        <div className="stat-header">
+                            <div className="stat-title">Total Consumption</div>
+                            <div className="stat-icon" style={{ color: 'var(--primary)' }}>
+                                <FiZap size={20} />
                             </div>
                         </div>
+                        <div className="stat-value" style={{ color: 'var(--primary)' }}>
+                            {totalUsage.toLocaleString()}
+                        </div>
+                        <div className="stat-unit">kWh</div>
+                    </div>
+                    
+                    <div className="stat-card">
+                        <div className="stat-header">
+                            <div className="stat-title">Min Usage</div>
+                            <div className="stat-icon" style={{ color: 'var(--success)' }}>
+                                <FiTrendingUp size={20} />
+                            </div>
+                        </div>
+                        <div className="stat-value" style={{ color: 'var(--success)' }}>
+                            {minUsage.toLocaleString()}
+                        </div>
+                        <div className="stat-unit">kWh</div>
                     </div>
                 </div>
             </div>

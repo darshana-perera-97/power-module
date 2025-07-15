@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
 import DeviceSelector from "./components/DeviceSelector";
 import DeviceStateViewer from "./components/DeviceStateViewer";
 import DeviceHistoryTable from "./components/DeviceHistoryTable";
 import CebDataManager from "./components/CebDataManager";
 import DailyUsageViewer from "./components/DailyUsageViewer";
-import { FiZap, FiShield, FiLogOut, FiUser, FiLock } from "react-icons/fi";
+import { FiZap, FiShield, FiLogOut, FiUser, FiLock, FiMenu, FiX } from "react-icons/fi";
 
 function AdminLogin({ onLogin }) {
   const [username, setUsername] = useState("");
@@ -31,31 +30,25 @@ function AdminLogin({ onLogin }) {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))' }}>
-      <div className="form-modern" style={{ maxWidth: '400px', width: '100%' }}>
-        <div className="text-center mb-4">
-          <div className="d-inline-flex align-items-center justify-content-center mb-3" style={{ 
-            width: '60px', 
-            height: '60px', 
-            background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
-            borderRadius: 'var(--radius-lg)',
-            color: 'var(--white)'
-          }}>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-icon">
             <FiShield size={24} />
           </div>
-          <h2 className="dashboard-title mb-2">Admin Access</h2>
-          <p className="dashboard-subtitle">Enter your credentials to continue</p>
+          <h2 className="auth-title">Admin Access</h2>
+          <p className="auth-subtitle">Enter your credentials to continue</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="form-label fw-semibold text-muted mb-2">
-              <FiUser className="me-2" />
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">
+              <FiUser className="form-icon" />
               Username
             </label>
             <input
               type="text"
-              className="form-control-modern w-100"
+              className="form-input"
               placeholder="Enter username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -64,14 +57,14 @@ function AdminLogin({ onLogin }) {
             />
           </div>
           
-          <div className="mb-4">
-            <label className="form-label fw-semibold text-muted mb-2">
-              <FiLock className="me-2" />
+          <div className="form-group">
+            <label className="form-label">
+              <FiLock className="form-icon" />
               Password
             </label>
             <input
               type="password"
-              className="form-control-modern w-100"
+              className="form-input"
               placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -80,7 +73,7 @@ function AdminLogin({ onLogin }) {
           </div>
           
           {error && (
-            <div className="alert-modern alert-modern-danger mb-4">
+            <div className="alert alert-error">
               <FiShield />
               {error}
             </div>
@@ -88,12 +81,12 @@ function AdminLogin({ onLogin }) {
           
           <button 
             type="submit" 
-            className="btn-modern btn-modern-primary w-100"
+            className="btn btn-primary btn-full"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <div className="spinner-modern"></div>
+                <div className="spinner"></div>
                 Signing In...
               </>
             ) : (
@@ -113,38 +106,98 @@ function UserView() {
   const [selectedDevice, setSelectedDevice] = useState(
     localStorage.getItem("selectedDevice") || ""
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("selectedDevice");
     setSelectedDevice("");
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
-    <div className="min-vh-100" style={{ background: 'var(--gray-50)' }}>
-      <Navbar selectedDevice={selectedDevice} onLogout={handleLogout} />
-      <div className="dashboard-container">
-        {!selectedDevice ? (
-          <DeviceSelector onDeviceSelect={setSelectedDevice} />
-        ) : (
-          <>
-            <div className="dashboard-header">
-              <h1 className="dashboard-title">
-                <FiZap className="me-3" style={{ color: 'var(--primary-color)' }} />
-                Power Dashboard
-              </h1>
-              <p className="dashboard-subtitle">
-                Real-time monitoring for device: <strong>{selectedDevice}</strong>
+    <div className="dashboard">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar}></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <FiZap className="brand-icon" />
+            <span className="brand-text">Power Meter</span>
+          </div>
+          <button className="sidebar-close" onClick={toggleSidebar}>
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        <nav className="sidebar-nav">
+          <div className="nav-section">
+            <h3 className="nav-title">Device</h3>
+            {selectedDevice && (
+              <div className="device-info">
+                <div className="device-status">
+                  <div className="status-dot status-active"></div>
+                  <span className="device-name">{selectedDevice}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="nav-section">
+            <h3 className="nav-title">Actions</h3>
+            <button 
+              className="nav-item"
+              onClick={handleLogout}
+            >
+              <FiLogOut />
+              <span>Switch Device</span>
+            </button>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Top Navigation */}
+        <header className="top-nav">
+          <button className="menu-toggle" onClick={toggleSidebar}>
+            <FiMenu size={20} />
+          </button>
+          
+          <div className="nav-content">
+            <h1 className="page-title">
+              {selectedDevice ? 'Power Dashboard' : 'Welcome'}
+            </h1>
+            {selectedDevice && (
+              <p className="page-subtitle">
+                Monitoring device: <strong>{selectedDevice}</strong>
               </p>
-            </div>
-            
-            <DeviceStateViewer deviceId={selectedDevice} />
-            
-            <div className="mt-5">
-              <DeviceHistoryTable deviceId={selectedDevice} />
-            </div>
-          </>
-        )}
-      </div>
+            )}
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="page-content">
+          {!selectedDevice ? (
+            <DeviceSelector onDeviceSelect={setSelectedDevice} />
+          ) : (
+            <>
+              <DeviceStateViewer deviceId={selectedDevice} />
+              
+              <div className="content-section">
+                <h2 className="section-title">Device History</h2>
+                <DeviceHistoryTable deviceId={selectedDevice} />
+              </div>
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
@@ -153,6 +206,7 @@ function AdminView() {
   const [loggedIn, setLoggedIn] = useState(
     localStorage.getItem("adminLoggedIn") === "true"
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = () => {
@@ -166,43 +220,82 @@ function AdminView() {
     navigate("/");
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   if (!loggedIn) return <AdminLogin onLogin={handleLogin} />;
 
   return (
-    <div className="min-vh-100" style={{ background: 'var(--gray-50)' }}>
-      <nav className="navbar navbar-expand-lg nav-modern">
-        <div className="container-fluid">
-          <a href="#" className="nav-modern-brand">
-            <FiZap />
-            Smart Power Meter (Admin)
-          </a>
-          <button
-            className="btn-modern btn-modern-secondary"
-            onClick={handleLogout}
-          >
-            <FiLogOut />
-            Logout
+    <div className="dashboard">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar}></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <FiShield className="brand-icon" />
+            <span className="brand-text">Admin Panel</span>
+          </div>
+          <button className="sidebar-close" onClick={toggleSidebar}>
+            <FiX size={20} />
           </button>
         </div>
-      </nav>
-      
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <h1 className="dashboard-title">
-            <FiShield className="me-3" style={{ color: 'var(--primary-color)' }} />
-            Admin Dashboard
-          </h1>
-          <p className="dashboard-subtitle">
-            Manage CEB data and monitor system usage
-          </p>
-        </div>
         
-        <CebDataManager />
-        
-        <div className="mt-5">
-          <DailyUsageViewer />
+        <nav className="sidebar-nav">
+          <div className="nav-section">
+            <h3 className="nav-title">Administration</h3>
+            <div className="nav-item active">
+              <FiShield />
+              <span>Dashboard</span>
+            </div>
+          </div>
+          
+          <div className="nav-section">
+            <h3 className="nav-title">Actions</h3>
+            <button 
+              className="nav-item"
+              onClick={handleLogout}
+            >
+              <FiLogOut />
+              <span>Logout</span>
+            </button>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Top Navigation */}
+        <header className="top-nav">
+          <button className="menu-toggle" onClick={toggleSidebar}>
+            <FiMenu size={20} />
+          </button>
+          
+          <div className="nav-content">
+            <h1 className="page-title">Admin Dashboard</h1>
+            <p className="page-subtitle">
+              Manage CEB data and monitor system usage
+            </p>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="page-content">
+          <div className="content-section">
+            <h2 className="section-title">CEB Data Management</h2>
+            <CebDataManager />
+          </div>
+          
+          <div className="content-section">
+            <h2 className="section-title">Daily Usage Analytics</h2>
+            <DailyUsageViewer />
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

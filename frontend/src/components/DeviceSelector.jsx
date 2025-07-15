@@ -41,52 +41,40 @@ export default function DeviceSelector({ onDeviceSelect }) {
   if (selected) return null;
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center">
-      <div className="form-modern" style={{ maxWidth: '500px', width: '100%' }}>
-        <div className="text-center mb-5">
-          <div className="d-inline-flex align-items-center justify-content-center mb-4" style={{ 
-            width: '80px', 
-            height: '80px', 
-            background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
-            borderRadius: 'var(--radius-xl)',
-            color: 'var(--white)'
-          }}>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-icon">
             <FiZap size={32} />
           </div>
-          <h2 className="dashboard-title mb-3">Select Your Device</h2>
-          <p className="dashboard-subtitle">
+          <h2 className="auth-title">Select Your Device</h2>
+          <p className="auth-subtitle">
             Choose a device to start monitoring your smart power meter
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-modern mx-auto mb-3"></div>
-            <p className="text-muted">Loading available devices...</p>
+          <div className="loading">
+            <div className="spinner"></div>
+            <span className="loading-text">Loading available devices...</span>
           </div>
         ) : error ? (
-          <div className="alert-modern alert-modern-danger mb-4">
+          <div className="alert alert-error">
             <FiAlertCircle />
             <div>
               <strong>Connection Error</strong>
-              <p className="mb-0 mt-1">{error}</p>
+              <p className="mb-0 mt-0">{error}</p>
             </div>
           </div>
         ) : devices.length === 0 ? (
-          <div className="text-center py-5">
-            <div className="d-inline-flex align-items-center justify-content-center mb-3" style={{ 
-              width: '60px', 
-              height: '60px', 
-              background: 'var(--gray-200)',
-              borderRadius: 'var(--radius-lg)',
-              color: 'var(--gray-500)'
-            }}>
+          <div className="text-center">
+            <div className="auth-icon" style={{ background: 'var(--gray-200)', color: 'var(--gray-500)' }}>
               <FiAlertCircle size={24} />
             </div>
             <h5 className="text-muted mb-2">No Devices Found</h5>
             <p className="text-muted mb-4">No power meter devices are currently available.</p>
             <button 
-              className="btn-modern btn-modern-secondary"
+              className="btn btn-secondary"
               onClick={loadDevices}
             >
               <FiRefreshCw />
@@ -94,14 +82,14 @@ export default function DeviceSelector({ onDeviceSelect }) {
             </button>
           </div>
         ) : (
-          <div>
-            <div className="mb-4">
-              <label className="form-label fw-semibold text-muted mb-3">
-                <FiZap className="me-2" />
+          <div className="auth-form">
+            <div className="form-group">
+              <label className="form-label">
+                <FiZap className="form-icon" />
                 Available Devices
               </label>
               <select
-                className="form-control-modern w-100"
+                className="form-input"
                 onChange={(e) => handleSelect(e.target.value)}
                 defaultValue=""
               >
@@ -123,7 +111,7 @@ export default function DeviceSelector({ onDeviceSelect }) {
               </div>
               
               <button 
-                className="btn-modern btn-modern-secondary"
+                className="btn btn-secondary"
                 onClick={loadDevices}
               >
                 <FiRefreshCw />
