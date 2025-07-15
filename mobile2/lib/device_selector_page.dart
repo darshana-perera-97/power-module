@@ -10,7 +10,7 @@ class DeviceSelectorPage extends StatefulWidget {
 }
 
 class _DeviceSelectorPageState extends State<DeviceSelectorPage> {
-  static const String apiUrl = 'http://localhost:3020/firebase';
+  static const String apiUrl = 'http://69.197.187.24:3020/firebase';
 
   List<String> deviceKeys = [];
   String? selectedDevice;

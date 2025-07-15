@@ -15,7 +15,7 @@ export default function DeviceStateViewer({ deviceId }) {
     const load = async () => {
       try {
         const res = await fetchDeviceState(deviceId);
-        const ceb = await fetch("http://localhost:3020/cebData").then((r) =>
+        const ceb = await fetch("http://69.197.187.24:3020/cebData").then((r) =>
           r.json()
         );
 

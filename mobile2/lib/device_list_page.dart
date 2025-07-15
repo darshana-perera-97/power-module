@@ -19,7 +19,7 @@ class _DeviceListPageState extends State<DeviceListPage> {
   }
 
   Future<void> fetchDevices() async {
-    final url = Uri.parse('http://localhost:3020/firebase'); // Replace with your local IP
+    final url = Uri.parse('http://69.197.187.24:3020/firebase'); // Replace with your local IP
 
     try {
       final response = await http.get(url);

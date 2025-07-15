@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:3020";
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://69.197.187.24:3020";
 
 export async function fetchDeviceKeys() {
   const res = await fetch(`${API_BASE}/devices`);

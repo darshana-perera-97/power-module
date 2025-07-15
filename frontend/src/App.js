@@ -138,7 +138,7 @@ function AdminView() {
 function App() {
   return (
     <Routes>
-      <Route path="/admin" element={<AdminView />} />
+      <Route path="/power-module/admin" element={<AdminView />} />
       <Route path="/*" element={<UserView />} />
     </Routes>
   );

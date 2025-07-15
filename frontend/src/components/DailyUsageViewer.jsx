@@ -5,7 +5,7 @@ function DailyUsageViewer() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        fetch("http://localhost:3020/api/daily-usage")
+        fetch("http://69.197.187.24:3020/api/daily-usage")
             .then(res => {
                 if (!res.ok) throw new Error("Network response was not ok");
                 return res.json();

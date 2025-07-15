@@ -43,10 +43,10 @@ class _DevicePageState extends State<DevicePage> {
     try {
       final devR = await http.get(
         Uri.parse(
-          'http://localhost:3020/currentState?device=${widget.deviceKey}',
+          'http://69.197.187.24:3020/currentState?device=${widget.deviceKey}',
         ),
       );
-      final cebR = await http.get(Uri.parse('http://localhost:3020/cebData'));
+      final cebR = await http.get(Uri.parse('http://69.197.187.24:3020/cebData'));
       if (devR.statusCode == 200 && cebR.statusCode == 200) {
         setState(() {
           deviceData = json.decode(devR.body);
@@ -66,7 +66,7 @@ class _DevicePageState extends State<DevicePage> {
   Future<void> _fetchHistory() async {
     try {
       final r = await http.get(
-        Uri.parse('http://localhost:3020/pastData?device=${widget.deviceKey}'),
+        Uri.parse('http://69.197.187.24:3020/pastData?device=${widget.deviceKey}'),
       );
       if (r.statusCode == 200) {
         setState(() {

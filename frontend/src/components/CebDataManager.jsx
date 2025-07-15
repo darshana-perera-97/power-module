@@ -5,7 +5,7 @@ import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
 import Spinner from "react-bootstrap/Spinner";
 
-const API_URL = "http://localhost:3020";
+const API_URL = "http://69.197.187.24:3020";
 
 const CebDataManager = () => {
   const [cebData, setCebData] = useState({
