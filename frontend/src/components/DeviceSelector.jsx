@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDeviceKeys } from "../api";
-import Card from "react-bootstrap/Card";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import Spinner from "react-bootstrap/Spinner";
-import { BsArrowRepeat } from "react-icons/bs";
+import { FiZap, FiRefreshCw, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 export default function DeviceSelector({ onDeviceSelect }) {
   const [devices, setDevices] = useState([]);
@@ -45,68 +41,98 @@ export default function DeviceSelector({ onDeviceSelect }) {
   if (selected) return null;
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-      <Card className="border-0 shadow-sm" style={{ minWidth: 320, maxWidth: 380 }}>
-        <Card.Body>
-          <h5 className="mb-3 text-center fw-semibold">Select a Device</h5>
-          <p className="text-muted small text-center mb-4">
-            Choose a device to start monitoring your smart power meter.
+    <div className="min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="form-modern" style={{ maxWidth: '500px', width: '100%' }}>
+        <div className="text-center mb-5">
+          <div className="d-inline-flex align-items-center justify-content-center mb-4" style={{ 
+            width: '80px', 
+            height: '80px', 
+            background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
+            borderRadius: 'var(--radius-xl)',
+            color: 'var(--white)'
+          }}>
+            <FiZap size={32} />
+          </div>
+          <h2 className="dashboard-title mb-3">Select Your Device</h2>
+          <p className="dashboard-subtitle">
+            Choose a device to start monitoring your smart power meter
           </p>
+        </div>
 
-          {loading ? (
-            <div className="d-flex align-items-center justify-content-center my-3">
-              <Spinner animation="border" size="sm" className="me-2" />
-              <span className="text-muted">Loading...</span>
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-modern mx-auto mb-3"></div>
+            <p className="text-muted">Loading available devices...</p>
+          </div>
+        ) : error ? (
+          <div className="alert-modern alert-modern-danger mb-4">
+            <FiAlertCircle />
+            <div>
+              <strong>Connection Error</strong>
+              <p className="mb-0 mt-1">{error}</p>
             </div>
-          ) : error ? (
-            <div className="alert alert-light border-danger text-danger small">
-              {error}
-              <div className="text-end mt-2">
-                <Button variant="outline-danger" size="sm" onClick={loadDevices}>
-                  <BsArrowRepeat className="me-1" />
-                  Retry
-                </Button>
-              </div>
+          </div>
+        ) : devices.length === 0 ? (
+          <div className="text-center py-5">
+            <div className="d-inline-flex align-items-center justify-content-center mb-3" style={{ 
+              width: '60px', 
+              height: '60px', 
+              background: 'var(--gray-200)',
+              borderRadius: 'var(--radius-lg)',
+              color: 'var(--gray-500)'
+            }}>
+              <FiAlertCircle size={24} />
             </div>
-          ) : devices.length === 0 ? (
-            <div className="text-center text-muted small">
-              No devices found.
-              <div className="mt-2">
-                <Button variant="outline-secondary" size="sm" onClick={loadDevices}>
-                  <BsArrowRepeat className="me-1" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Form>
-              <Form.Group controlId="deviceSelect">
-                <Form.Select
-                  defaultValue=""
-                  onChange={(e) => handleSelect(e.target.value)}
-                  aria-label="Select device"
-                  className="mb-3"
-                >
-                  <option value="" disabled>
-                    -- Choose a Device --
+            <h5 className="text-muted mb-2">No Devices Found</h5>
+            <p className="text-muted mb-4">No power meter devices are currently available.</p>
+            <button 
+              className="btn-modern btn-modern-secondary"
+              onClick={loadDevices}
+            >
+              <FiRefreshCw />
+              Refresh
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="mb-4">
+              <label className="form-label fw-semibold text-muted mb-3">
+                <FiZap className="me-2" />
+                Available Devices
+              </label>
+              <select
+                className="form-control-modern w-100"
+                onChange={(e) => handleSelect(e.target.value)}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  -- Choose a Device --
+                </option>
+                {devices.map((key) => (
+                  <option key={key} value={key}>
+                    {key}
                   </option>
-                  {devices.map((key) => (
-                    <option key={key} value={key}>
-                      {key}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-              <div className="d-flex justify-content-end">
-                <Button variant="outline-primary" size="sm" onClick={loadDevices}>
-                  <BsArrowRepeat className="me-1" />
-                  Refresh List
-                </Button>
+                ))}
+              </select>
+            </div>
+            
+            <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex align-items-center gap-2 text-muted">
+                <FiCheckCircle size={16} />
+                <small>{devices.length} device{devices.length !== 1 ? 's' : ''} available</small>
               </div>
-            </Form>
-          )}
-        </Card.Body>
-      </Card>
+              
+              <button 
+                className="btn-modern btn-modern-secondary"
+                onClick={loadDevices}
+              >
+                <FiRefreshCw />
+                Refresh List
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

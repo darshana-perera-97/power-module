@@ -1,23 +1,31 @@
 import React from "react";
+import { FiZap, FiLogOut, FiMonitor } from "react-icons/fi";
 
 export default function Navbar({ selectedDevice, onLogout }) {
   return (
-    <nav className="navbar navbar-expand-lg" style={{ background: "#0077b5" }}>
+    <nav className="navbar navbar-expand-lg nav-modern">
       <div className="container-fluid">
-        <span className="navbar-brand text-white fw-bold">Smart Power Meter</span>
+        <a href="#" className="nav-modern-brand">
+          <FiZap />
+          Smart Power Meter
+        </a>
+        
         {selectedDevice && (
-          <>
-            <span className="text-white ms-3">
-              📟 Selected Device: <strong>{selectedDevice}</strong>
-            </span>
+          <div className="d-flex align-items-center gap-4">
+            <div className="d-flex align-items-center gap-2 text-white">
+              <FiMonitor size={18} />
+              <span className="fw-medium">Device:</span>
+              <span className="fw-bold">{selectedDevice}</span>
+            </div>
+            
             <button
               onClick={onLogout}
-              className="btn btn-outline-light ms-auto"
-              style={{ marginLeft: "auto" }}
+              className="btn-modern btn-modern-secondary"
             >
+              <FiLogOut />
               Logout
             </button>
-          </>
+          </div>
         )}
       </div>
     </nav>

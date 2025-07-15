@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDeviceState } from "../api";
-import Card from 'react-bootstrap/Card';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
+import { FiDollarSign, FiZap, FiBattery, FiActivity, FiClock, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
 export default function DeviceStateViewer({ deviceId }) {
   const [deviceData, setDeviceData] = useState(null);
@@ -37,8 +35,23 @@ export default function DeviceStateViewer({ deviceId }) {
     };
   }, [deviceId]);
 
-  if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
-  if (!deviceData || !cebData) return <p>Loading device data…</p>;
+  if (error) {
+    return (
+      <div className="alert-modern alert-modern-danger">
+        <FiXCircle />
+        <strong>Error:</strong> {error}
+      </div>
+    );
+  }
+  
+  if (!deviceData || !cebData) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-modern mx-auto mb-3"></div>
+        <p className="text-muted">Loading device data...</p>
+      </div>
+    );
+  }
 
   const { data, time, deviceStatus } = deviceData;
   const { totalpower, livepower, battery, current, voltage } = data;
@@ -64,103 +77,118 @@ export default function DeviceStateViewer({ deviceId }) {
     cost = fixed + unit * power;
   }
 
-  // LinkedIn color
-  const linkedinBlue = '#0077b5';
-  const cardStyle = { border: `1px solid ${linkedinBlue}`, borderRadius: 10, minHeight: 90 };
-  const headerStyle = { background: linkedinBlue, color: 'white', borderTopLeftRadius: 10, borderTopRightRadius: 10, fontWeight: 600, fontSize: 16 };
-  const valueStyle = { fontWeight: 600, fontSize: 22, color: linkedinBlue };
+  const statsData = [
+    {
+      title: "Estimated Cost",
+      value: `Rs. ${cost.toFixed(2)}`,
+      unit: "monthly",
+      icon: FiDollarSign,
+      color: "success"
+    },
+    {
+      title: "Live Power",
+      value: livepower,
+      unit: "kW",
+      icon: FiZap,
+      color: "primary"
+    },
+    {
+      title: "Total Power",
+      value: totalpower,
+      unit: "kWh",
+      icon: FiActivity,
+      color: "info"
+    },
+    {
+      title: "Device Status",
+      value: deviceStatus ? "Active" : "Inactive",
+      unit: deviceStatus ? "Online" : "Offline",
+      icon: deviceStatus ? FiCheckCircle : FiXCircle,
+      color: deviceStatus ? "success" : "danger"
+    },
+    {
+      title: "Battery Level",
+      value: battery,
+      unit: "%",
+      icon: FiBattery,
+      color: "warning"
+    },
+    {
+      title: "Last Updated",
+      value: time,
+      unit: "timestamp",
+      icon: FiClock,
+      color: "secondary"
+    }
+  ];
+
+  const getColorClass = (color) => {
+    const colors = {
+      primary: 'var(--primary-color)',
+      success: 'var(--success-color)',
+      warning: 'var(--warning-color)',
+      danger: 'var(--danger-color)',
+      info: 'var(--info-color)',
+      secondary: 'var(--secondary-color)'
+    };
+    return colors[color] || colors.primary;
+  };
 
   return (
-    <div className="container mb-4">
-      {/* Usage Data */}
-      <div className="mb-3">
-        <div className="mb-2 fw-bold" style={{ color: linkedinBlue }}>Usage Data</div>
-        <Row xs={1} md={3} className="g-3">
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Estimated Cost</div>
-                <div style={valueStyle}>Rs. {cost.toFixed(2)}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Live Power</div>
-                <div style={valueStyle}>{livepower}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Total Power</div>
-                <div style={valueStyle}>{totalpower}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+    <div>
+      <div className="grid-modern grid-modern-3">
+        {statsData.map((stat, index) => {
+          const IconComponent = stat.icon;
+          return (
+            <div key={index} className="stats-card">
+              <div className="stats-card-header">
+                <div className="stats-card-title">{stat.title}</div>
+                <div className="stats-card-icon" style={{ background: `linear-gradient(135deg, ${getColorClass(stat.color)}, ${getColorClass(stat.color)}dd)` }}>
+                  <IconComponent size={20} />
+                </div>
+              </div>
+              <div className="stats-card-value" style={{ color: getColorClass(stat.color) }}>
+                {stat.value}
+              </div>
+              <div className="stats-card-unit">{stat.unit}</div>
+            </div>
+          );
+        })}
       </div>
-      {/* Device Status */}
-      <div className="mb-3">
-        <div className="mb-2 fw-bold" style={{ color: linkedinBlue }}>Device Status</div>
-        <Row xs={1} md={3} className="g-3">
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Status</div>
-                <div style={valueStyle}>{deviceStatus ? <span className="text-success">🟢 Active</span> : <span className="text-danger">🔴 Inactive</span>}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Device</div>
-                <div style={valueStyle}>{deviceId}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Battery</div>
-                <div style={valueStyle}>{battery}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-      {/* Other Measurements */}
-      <div className="mb-3">
-        <div className="mb-2 fw-bold" style={{ color: linkedinBlue }}>Other Measurements</div>
-        <Row xs={1} md={3} className="g-3">
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Current</div>
-                <div style={valueStyle}>{current}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Voltage</div>
-                <div style={valueStyle}>{voltage}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card style={cardStyle} className="h-100">
-              <Card.Body>
-                <div className="text-muted">Last Updated</div>
-                <div style={{ ...valueStyle, fontSize: 14 }}>{time}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+
+      {/* Additional Measurements */}
+      <div className="mt-5">
+        <h4 className="mb-4 fw-semibold text-muted">
+          <FiActivity className="me-2" />
+          Electrical Measurements
+        </h4>
+        <div className="grid-modern grid-modern-2">
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-card-title">Current</div>
+              <div className="stats-card-icon" style={{ background: 'linear-gradient(135deg, var(--info-color), var(--info-color)dd)' }}>
+                <FiZap size={20} />
+              </div>
+            </div>
+            <div className="stats-card-value" style={{ color: 'var(--info-color)' }}>
+              {current}
+            </div>
+            <div className="stats-card-unit">Amperes</div>
+          </div>
+          
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-card-title">Voltage</div>
+              <div className="stats-card-icon" style={{ background: 'linear-gradient(135deg, var(--warning-color), var(--warning-color)dd)' }}>
+                <FiZap size={20} />
+              </div>
+            </div>
+            <div className="stats-card-value" style={{ color: 'var(--warning-color)' }}>
+              {voltage}
+            </div>
+            <div className="stats-card-unit">Volts</div>
+          </div>
+        </div>
       </div>
     </div>
   );
